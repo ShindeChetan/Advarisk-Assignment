@@ -5,14 +5,14 @@ This is a customer facing web based application where a user can search for news
 
 **Steps to setup and start the app:-**
 
-Download the zip and unzip it
-Install the python
-Install the django (install django rest framework as well)
-Change directory (cd) to project
-Run the migrations using makemigrations command
-Migrate the changes to the database.
-Run the ‘python manage.py runserver’ command
-Open http://127.0.0.1:8000/ url for web app.
+1. Download the zip and unzip it
+2. Install the python
+3. Install the django (install django rest framework as well)
+4. Change directory (cd) to project
+5. Run the migrations using makemigrations command
+6. Migrate the changes to the database.
+7. Run the ‘python manage.py runserver’ command
+8. Open http://127.0.0.1:8000/ url for web app.
 
 **Technologies used for assignment :-**
 
