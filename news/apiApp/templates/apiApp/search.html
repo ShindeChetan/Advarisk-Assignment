@@ -1,0 +1,14 @@
+{% extends 'apiApp/base.html' %}
+{% block title %}News Page{% endblock %} 
+{% block content %}
+
+  <h1>Search Results for {{keyword}}</h1>
+  {% if data %}
+  <ol>
+   {% for k in data %}
+    <li style="margin-bottom: 15px;">{{k}}</li>
+   {% endfor %}
+    </ol>
+  {% endif %}
+
+{% endblock %}
