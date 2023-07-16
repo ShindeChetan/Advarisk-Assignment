@@ -1,5 +1,5 @@
-# Avarisk-Assignment
-**Django web app for Avarisk assignment**
+# Advarisk-Assignment
+**Django web app for Advarisk assignment**
 
 This is a customer facing web based application where a user can search for news articles from around the world based on the entered keyword. Also they can view results of their previous searches
 
