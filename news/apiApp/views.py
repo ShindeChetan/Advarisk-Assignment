@@ -140,12 +140,49 @@ class ExistingNewsView(APIView):
     serializer_class = ArticleSerializer
     
     def get(self, request, **kwargs):
-        search_obj=SearchTable.objects.get(keyword=kwargs.get("keyword"))
+        keyword=kwargs.get("keyword")
+        search_obj=SearchTable.objects.get(keyword=keyword)
         articles = Article.objects.filter(user=request.user, keyword=search_obj)
         serzd_data=self.serializer_class(articles, many=True)
-        
-        return Response(serzd_data.data)
+        # ddata=[dict(data) for data in serzd_data.data]
+        return render(request, "apiApp/search.html", {"data":serzd_data.data, "keyword":keyword})
+
+
+class RefreshNews(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class=NewsSerializer
     
+    def post(self, request):
+        data=request.POST
+        
+        api_url="https://newsapi.org/v2/everything"
+        response=requests.get(api_url, params={'apiKey':API_KEY,"q": data.get('keyword'), "from": data.get('from_date')}).json()
+        print(response)
+        articles=response.get('articles')
+        search_obj=SearchTable.objects.get_or_none(user=request.user, keyword=data['keyword'])
+        if len(articles):
+            search_obj.created_date=datetime.now()
+            search_obj.latest_article_date=parse_datetime(articles[0].get("publishedAt"))
+            search_obj.save()
+                
+            instances=[]
+            
+            for article in articles:
+                source=article.pop("source")
+                publishedAt=article.pop("publishedAt")
+                instances.append(
+                    Article(
+                        keyword=search_obj,
+                        user=request.user,
+                        source_id=source.get('id'),
+                        source_name=source.get('name'),
+                        publishedAt=parse_datetime(publishedAt),
+                        **article
+                    )
+                )
+            Article.objects.bulk_create(instances)
+        return redirect('existing-view', keyword=data.get('keyword'))
+
 
 class NewsView(APIView):
     """ News Article view        
@@ -167,7 +204,7 @@ class NewsView(APIView):
                 user=request.user,
                 keyword=keyword
             )
-        elif datetime.now(pytz.UTC) - timedelta(minutes=30) < search_obj.created_date:
+        elif datetime.now(pytz.UTC) - timedelta(minutes=15) < search_obj.created_date:
                 existing_articles=Article.objects.filter(keyword=search_obj, user=request.user).order_by("-publishedAt")
                 serzd_data=ArticleSerializer(existing_articles, many=True)
                 return render(request, "apiApp/search.html", {"data":serzd_data.data, "keyword":keyword})
@@ -176,7 +213,7 @@ class NewsView(APIView):
         params={
             'q':keyword,
             'apiKey':API_KEY,
-            'pageSize':10,
+            'pageSize':15,
             'page':1
         }
         if source_category:
@@ -184,7 +221,7 @@ class NewsView(APIView):
             params.update({'category':source_category})
         
         if from_date and not source_category:
-            from_date=from_date.strftime("%Y-%m-%d")
+            from_date=datetime.strptime(from_date,"%Y-%m-%d")
             params.update({'from':from_date})
         
         if language:
@@ -221,8 +258,8 @@ class NewsView(APIView):
                 "Error":"Invalid response received from the API."
             })
         
+        # return Response(news_response)
         return render(request, "apiApp/search.html", {"data":news_response.get('articles'), "keyword":keyword})
-    
     def get(self, request):
         """ will execute of /news get call
         """
